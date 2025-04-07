@@ -28,5 +28,6 @@ struct Node {
  * @param root Pointer to the root of the tree to check for equal paths
  */
 bool equalPaths(Node * root);
-
+int leftestheight(Node* root, int depth);
+bool equalPathsrecursion(Node* root, int depth, int goalHeight);
 #endif
