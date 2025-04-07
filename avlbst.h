@@ -207,16 +207,8 @@ void AVLTree<Key, Value>::insert(const std::pair<const Key, Value> &new_item)
     
     while(bCheck){
       setTrueBalance(bCheck);
+      fixBalance(bCheck);
       bCheck = bCheck->getParent();
-    }
-
-    if(pBalance == 0){
-      //insertFix(parent, toInsert);
-      while(parent){
-        setTrueBalance(parent);
-        fixBalance(parent);
-        parent = parent->getParent();
-      }
     }
 
 }
@@ -224,7 +216,6 @@ void AVLTree<Key, Value>::insert(const std::pair<const Key, Value> &new_item)
 template<class Key, class Value>
 AVLNode<Key, Value>* AVLTree<Key, Value>::rotateRight(AVLNode<Key, Value>* curr){
     if (curr == nullptr || curr->getLeft() == nullptr) {
-   // std::cout << "growling on right side.... " << std::endl;
     return curr;}
   bool onLeft = false;
   AVLNode<Key, Value>* newCurr = curr->getLeft();
@@ -246,7 +237,6 @@ AVLNode<Key, Value>* AVLTree<Key, Value>::rotateRight(AVLNode<Key, Value>* curr)
     this->root_ = newCurr;
   }
   newCurr->setParent(parent);
-  //std::cout << " rotated ! " << std::endl;
   if (this->root_ == newCurr) {
     newCurr->setParent(nullptr);  // ensure root has no parent
 }
@@ -307,14 +297,12 @@ void AVLTree<Key, Value>:: remove(const Key& key)
 
     int diff;
     bool onLeft = false;
-   // this->print();
 
     AVLNode<Key, Value>* curr = static_cast<AVLNode<Key, Value>*>(this->internalFind(key));
     AVLNode<Key, Value>* child = nullptr;
     AVLNode<Key, Value>* parent = nullptr;
 
     if(curr == nullptr){
-      //std::cout << " not found " << std::endl;
       return;
     }
     // pt2 if n has two children, swap with predecessor
@@ -342,9 +330,7 @@ void AVLTree<Key, Value>:: remove(const Key& key)
         diff = 1; 
         onLeft = true;
         }
-      else if(parent->getRight() == curr) diff = -1;
-      //else std::cout << "issue in remove finding node" << std::endl;
-    }
+      else if(parent->getRight() == curr) diff = -1;  }
 
 
         // Update parent pointers
@@ -355,14 +341,10 @@ void AVLTree<Key, Value>:: remove(const Key& key)
         // Connect parent to child
         if (onLeft) {
             parent->setLeft(child);
-            if(child == nullptr){
-              //std::cout << "set child null " << std::endl;
-            }
+
         } else {
             parent->setRight(child);
-            if(child == nullptr){
-             // std::cout << "set child null " << std::endl;
-            }
+
         }
     }
     if(child) child->setParent(parent);
@@ -373,7 +355,9 @@ void AVLTree<Key, Value>:: remove(const Key& key)
 
       while(parent){
         setTrueBalance(parent);
-        fixBalance(parent);
+        if(parent->getBalance() > 1 || parent->getBalance() < -1){
+          fixBalance(parent);
+        }
         parent = parent->getParent();
       }
 
