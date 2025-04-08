@@ -138,12 +138,12 @@ protected:
     virtual void nodeSwap( AVLNode<Key,Value>* n1, AVLNode<Key,Value>* n2);
 
     // Add helper functions here
-    //void insertFix(AVLNode<Key, Value>* parent, AVLNode<Key, Value>* current);
+    void insertFix(AVLNode<Key, Value>* parent, AVLNode<Key, Value>* current);
     AVLNode<Key, Value>* rotateLeft(AVLNode<Key, Value>* curr);
     AVLNode<Key, Value>* rotateRight(AVLNode<Key, Value>* curr);
     int getHeight(AVLNode<Key, Value>* root);
     int setTrueBalance(AVLNode<Key, Value>* root);
-    //void removeFix(AVLNode<Key, Value>* n, int diff);
+    void removeFix(AVLNode<Key, Value>* n, int diff);
     void fixBalance(AVLNode<Key, Value>* curr);
 
 
@@ -176,7 +176,7 @@ void AVLTree<Key, Value>::insert(const std::pair<const Key, Value> &new_item)
       this->root_ = toInsert;
       return;
   }
-
+  //std::cout <<"INSERTING" <<toInsert->getKey() << std::endl;
     AVLNode<Key, Value> *curr = (static_cast<AVLNode<Key, Value>*>(this->root_));
     AVLNode<Key, Value> *parent = nullptr;
     // finding the position
@@ -191,28 +191,42 @@ void AVLTree<Key, Value>::insert(const std::pair<const Key, Value> &new_item)
         curr = static_cast<AVLNode<Key, Value>*>(curr->getRight());
       }
       else{
+        //std::cout <<"FOUND ! "<< std::endl;
         curr->setValue(new_item.second);
         delete toInsert;
         return;
       }
     }
+    //std::cout<<"not found! parent = " << parent->getKey() <<std::endl;
     toInsert->setParent(parent);
     
     if(toInsert->getKey()<parent->getKey()) 
       {parent->setLeft(toInsert);}
-    else parent->setRight(toInsert);
+     // parent->updateBalance(-1);
+    else {
+      parent->setRight(toInsert);}
+     // parent->updateBalance(1);
 
     // update balances
     int pBalance = parent->getBalance();
-    AVLNode<Key, Value>* bCheck= parent;
-    
-    while(bCheck){
-      setTrueBalance(bCheck);
-      fixBalance(bCheck);
-      if(bCheck->getBalance() == 0) break;
-      bCheck = bCheck->getParent();
+    //std::cout <<"parent balance = " << pBalance << std::endl;
+    // if(pBalance == -1) parent->setBalance(0);
+    // if(pBalance == 1) parent->setBalance(0);
+    // if(pBalance == 0){
+    //   if(parent->getLeft() == toInsert) parent->updateBalance(-1);
+    //   else parent->updateBalance(1);
+    //   if(parent->getParent()){
+    //     setTrueBalance(parent->getParent());
+    //   }
+      //std::cout << "new balance ! " << parent->getBalance() << std::endl;
+      //insertFix(parent, toInsert);
+    //}
+    while(parent){
+      setTrueBalance(parent);
+      fixBalance(parent);
+      if(parent->getBalance() == 0) break;
+      parent= parent->getParent();
     }
-
 }
 
 template<class Key, class Value>
@@ -343,11 +357,11 @@ void AVLTree<Key, Value>:: remove(const Key& key)
         // Connect parent to child
         if (onLeft) {
             parent->setLeft(child);
-            parent->updateBalance(-1);
+            //parent->updateBalance(-1);
 
         } else {
             parent->setRight(child);
-            parent->updateBalance(1);
+            //parent->updateBalance(1);
 
         }
     }
@@ -397,109 +411,246 @@ void AVLTree<Key, Value>::nodeSwap( AVLNode<Key,Value>* n1, AVLNode<Key,Value>* 
     n2->setBalance(tempB);
 }
 
-// template<class Key, class Value>
-// void AVLTree<Key, Value>::removeFix(AVLNode<Key, Value>* n, int diff){
-//   AVLNode<Key, Value>* parent;
-//   AVLNode<Key, Value>* left;
-//   AVLNode<Key, Value>* right;
-//   int ndiff = 0;
-//   int balance;
-//   bool onleft;
-//   int lbalance = 0;
+// TODO insertFix
+template<class Key, class Value>
+void AVLTree<Key, Value>::insertFix(AVLNode<Key, Value>* parent, AVLNode<Key, Value>* current){
+  //std::cout <<"INSERTFIX " << parent->getKey() << " curr: " << current->getKey() << std::endl;
+  if(!parent){
+    return;
+  }
+  AVLNode<Key, Value>* g = parent->getParent();
+  if(g == nullptr) {
+    // //std::cout << " FAKE GRAMMY " << std::endl;
+    // if(getHeight(parent) == -2) rotateRight(parent);
+    // if(getHeight(parent) == 2) rotateLeft(parent);
+    // setTrueBalance(parent);
+    // setTrueBalance(parent->getParent());
+    return;
+  }
+  //this->printRoot(g);
+  
+  std::cout << "g " << g->getKey() << " " << (int) g->getBalance() << std::endl;
+  std::cout << "p " << parent->getKey()  << " " <<(int) parent->getBalance() << std::endl;
 
-//   if(n == nullptr) return;
-//   parent = n->getParent();
-//   if(parent){
-//     onleft = parent->getLeft() == n ? true : false;
-//     ndiff = onleft ? 1 : -1;
-//   }
-//   balance = n->getBalance();
+  
+  int b = g->getBalance();
+  // b = 0
+  if(b == 0) return;  
+  if(std::abs(b) == 1) insertFix(g, parent);
 
-//   if(diff == -1){
-//     if(balance + diff == -2){
-//       left = n->getLeft();
-//       if(left) lbalance = left->getBalance();
-//       if(lbalance == 0){
-//         rotateRight(n);
-//         n->setBalance(-1);
-//         left->setBalance(1);
-//       }
-//       else if((int)left->getBalance() == -1){
-//         rotateRight(n);
-//         n->setBalance(0);
-//         left->setBalance(0);
-//         removeFix(parent, ndiff);
-//       }
-//       else if((int)left->getBalance() == 1){
-//         right = left->getRight();
-//         rotateLeft(left);
-//         rotateRight(n);
-//         if((int)right->getBalance() == 1){
-//           n->setBalance(0);
-//           left->setBalance(-1);
-//           right->setBalance(0);
-//         }
-//         else if((int)right->getBalance() == 0){
-//             n->setBalance(0);
-//             right->setBalance(0);
-//             left->setBalance(0);
-//         }
-//         else if((int)right->getBalance() == -1){
-//           n->setBalance(1);
-//           left->setBalance(0);
-//           right->setBalance(0);
-//         }
-//         removeFix(parent, ndiff);
-//       }
-//     }
-//     else if(balance + diff == -1) n->setBalance(-1);
-//     else if(balance + diff == 0){
-//         n->setBalance(0);
-//         removeFix(parent, ndiff);}
-//     }
+  if(std::abs(b) == 2){
+    // zig zag - rotateleft(p) rotateright(g)
+    if(g->getLeft() == parent && parent->getRight() == current){
+      //std::cout << " zag zig " << g->getKey() << " " << std::endl;
 
-//   else if(diff == 1){
-//     if(balance + diff == 2){
-//       right = n->getRight(); 
-//       if((int)right->getBalance() == 1){
-//         rotateLeft(n);
-//         n->setBalance(0);
-//         right->setBalance(0);
-//         removeFix(parent, ndiff);
-//       }
-//       else if((int)right->getBalance() == 0){
-//         rotateLeft(n);
-//         n->setBalance(1);
-//         right->setBalance(-1);
-//       }
-//       else if((int)right->getBalance() == -1){
-//         left = right->getLeft();
-//         rotateRight(right);
-//         rotateLeft(n);
-//         if((int)left->getBalance() == -1){
-//           n->setBalance(0);
-//           right->setBalance(1);
-//           left->setBalance(0);
-//         }
-//         else if((int)left->getBalance() == 0){
-//             n->setBalance(0);
-//             right->setBalance(0);
-//             left->setBalance(0);
-//         }
-//         else if((int)left->getBalance() == 1){
-//           n->setBalance(-1);
-//           left->setBalance(0);
-//           right->setBalance(0);
-//         }
-//         removeFix(parent, ndiff);
-//       }
-//     }
-//     else if(balance + diff == 1) n->setBalance(1);
-//     else if(balance + diff == 0){
-//         n->setBalance(0);
-//         removeFix(parent, ndiff);}
-//     }
-// }
+      rotateLeft(parent);
+      rotateRight(g);
+      if(current->getBalance() == -1){
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+        // parent->setBalance(0);
+        // g->updateBalance(1);
+        // current->setBalance(0);
+      }
+      else if(current->getBalance() == 0){
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+        // parent->setBalance(0);
+        // g->setBalance(0);
+        // current->setBalance(0);
+      }
+      else if(current->getBalance() == 1){
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+        // parent->updateBalance(-1);
+        // g->setBalance(0);
+        // current->setBalance(0);
+      }
+      else{
+       // std::cout<<"insert, balances wrong" << std::endl;
+      }
+    }
+    // zig zig - rotateright(g) bp, bg = 0
+    else if(g->getLeft() == parent && parent->getLeft() == current){
+      //std::cout << " zig zig " << g->getKey() << " " <<(int) b << std::endl;
+
+      rotateRight(g);
+      setTrueBalance(parent);
+      setTrueBalance(g);
+      setTrueBalance(current);
+      //parent->setBalance(0);
+      //g->setBalance(0);
+      //std::cout << " new balance " << (int) current->getBalance() << std::endl;
+    }
+    // zag zig - rotateright (p), rotateleft(g)
+    else if(g->getRight() == parent && parent->getLeft() == current){
+        //std::cout << " zag zig " << g->getKey() << " " << g->getBalance() << std::endl;
+        //std::cout << " parent " << parent->getKey() << std::endl;
+      rotateRight(parent);
+      rotateLeft(g);
+      // THESE MIGHT BE REASON FOR ERROR
+      if(current->getBalance() == 1){
+        //std::cout << "current " << current->getKey() << " -1" << std::endl;
+        // parent->setBalance(0);
+        // g->updateBalance(-1);
+        // current->setBalance(0);
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+      }
+      else if(current->getBalance() == 0){
+        //std::cout << "current " << current->getKey() << " 0" << std::endl;
+        // parent->setBalance(0);
+        // g->setBalance(0);
+        // current->setBalance(0);
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+      }
+      else if(current->getBalance() == 1){
+        //std::cout << "current " << current->getKey() << " 1" << std::endl;
+        // parent->updateBalance(1);
+        // g->setBalance(0);
+        // current->setBalance(0);
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+      }
+      else{
+        //std::cout<<"insert, balances wrong" << std::endl;
+      }
+    }
+    // zag zag - rotateleft (g), bp bg = 0
+      else if(g->getRight() == parent && parent->getRight() == current){
+        //std::cout << " zag zag " << g->getKey() << " " << std::endl;
+        rotateLeft(g);
+        // parent->setBalance(0);
+        // g->setBalance(0);
+        setTrueBalance(parent);
+        setTrueBalance(g);
+        setTrueBalance(current);
+      }
+      else{
+        // std::cout << "something wrong in insert rotations" << std::endl;
+        // std::cout << "current " << current->getKey() << " parent " << parent->getKey() << " gramps " << g->getKey() << std::endl;
+        // std::cout << "current " << (int)current->getBalance() << " parent " << (int)parent->getBalance() << " gramps " << (int)g->getBalance() << std::endl;
+        return;
+      }
+    //std::cout << " got here? " << std::endl;
+  }
+}
+
+
+
+template<class Key, class Value>
+void AVLTree<Key, Value>::removeFix(AVLNode<Key, Value>* n, int diff){
+  AVLNode<Key, Value>* parent;
+  AVLNode<Key, Value>* left;
+  AVLNode<Key, Value>* right;
+  int ndiff = 0;
+  int balance;
+  bool onleft;
+  int lbalance = 0;
+
+  if(n == nullptr) return;
+  parent = n->getParent();
+  if(parent){
+    onleft = parent->getLeft() == n ? true : false;
+    ndiff = onleft ? 1 : -1;
+  }
+  balance = n->getBalance();
+
+  if(diff == -1){
+    if(balance + diff == -2){
+      left = n->getLeft();
+      // if(!left){
+      //   std::cout<<"ISSUE HERE" << std::endl;
+      //   return;
+      // }
+      if((int)left->getBalance() == -1){
+        rotateRight(n);
+        n->setBalance(0);
+        left->setBalance(0);
+        removeFix(parent, ndiff);
+      }
+      else if(left->getBalance() ==0){
+        rotateRight(n);
+        n->setBalance(-1);
+        left->setBalance(1);
+      }
+      else if((int)left->getBalance() == 1){
+        right = left->getRight();
+        rotateLeft(left);
+        rotateRight(n);
+        if((int)right->getBalance() == 1){
+          n->setBalance(0);
+          left->setBalance(-1);
+          right->setBalance(0);
+        }
+        else if((int)right->getBalance() == 0){
+            n->setBalance(0);
+            right->setBalance(0);
+            left->setBalance(0);
+        }
+        else if((int)right->getBalance() == -1){
+          n->setBalance(1);
+          left->setBalance(0);
+          right->setBalance(0);
+        }
+        removeFix(parent, ndiff);
+      }
+    }
+    else if(balance + diff == -1) n->setBalance(-1);
+    else if(balance + diff == 0){
+        n->setBalance(0);
+        removeFix(parent, ndiff);}
+    }
+
+  else if(diff == 1){
+    if(balance + diff == 2){
+      right = n->getRight(); 
+      if((int)right->getBalance() == 1){
+        rotateLeft(n);
+        n->setBalance(0);
+        right->setBalance(0);
+        removeFix(parent, ndiff);
+      }
+      else if((int)right->getBalance() == 0){
+        rotateLeft(n);
+        n->setBalance(1);
+        right->setBalance(-1);
+      }
+      else if((int)right->getBalance() == -1){
+        left = right->getLeft();
+        rotateRight(right);
+        rotateLeft(n);
+        if((int)left->getBalance() == -1){
+          n->setBalance(0);
+          right->setBalance(1);
+          left->setBalance(0);
+        }
+        else if((int)left->getBalance() == 0){
+            n->setBalance(0);
+            right->setBalance(0);
+            left->setBalance(0);
+        }
+        else if((int)left->getBalance() == 1){
+          n->setBalance(-1);
+          left->setBalance(0);
+          right->setBalance(0);
+        }
+        removeFix(parent, ndiff);
+      }
+    }
+    else if(balance + diff == 1) n->setBalance(1);
+    else if(balance + diff == 0){
+        n->setBalance(0);
+        removeFix(parent, ndiff);}
+    }
+}
 
 
 
